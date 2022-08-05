@@ -1,16 +1,15 @@
 import { Manager, Socket } from "socket.io-client";
-import { request, gql, GraphQLClient } from "graphql-request";
+import { GraphQLClient } from "graphql-request";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { isBoolean, IsDefinedNotNull, isString } from "./utils";
 import {
 	ChannelMemberArrayOutput,
 	ChannelMemberCreateInput,
-	ChannelMessageCreateInput,
 	ChannelMessageOutput,
 	ChannelMessageType,
-	CMChannelAddMembersInput,
 } from "./type";
 import { getGQLErrorMessages } from "./gqlErrorObject";
+import { GQLFunction } from "./gqlFunction";
 export enum LogLevel {
 	PRODUCTION = 9,
 	LOG = 1,
@@ -23,14 +22,6 @@ export type ScalableChatEngineOptions = {
 	gqlURL?: string;
 	logLevel?: number;
 };
-
-// const defaultScalableChatEngineOptions:ScalableChatEngineOptions={
-//     wsURL:"",
-//     baseURL:"",
-//     gqlURL:"",
-//     logLevel:0
-// }
-
 export class ScalableChatEngine {
 	private static _instance?: ScalableChatEngine;
 	protected socketManager?: Manager;
@@ -127,32 +118,12 @@ export class ScalableChatEngine {
 		return `Bearer ${this.key}`;
 	}
 
-	getChannel(channelId: string): Channel {
-		return new Channel(this, channelId);
+	getChannel(channelId: string): SChannel {
+		return new SChannel(this, channelId);
 	}
-	// public Channel = new class{
-	//     private gqlClient:GraphQLClient
-	//     protected channelId:string
-	//     constructor(public superThis:ScalableChatEngine, channelId:string){
-	//         this.channelId = channelId
-	//         this.gqlClient = new GraphQLClient(this.)
-	//     }
-	//     sendMessage(){
-
-	//     }
-	// }(this)
-
-	// public utilities = new class {
-	//     constructor(public superThis: classX) {
-	//     }
-	//     public testSetOuterPrivate(target: number) {
-	//         this.superThis.y = target;
-	//     }
-	// }(this);
 }
 
-
-class Channel {
+class SChannel {
 	private gqlClient: GraphQLClient;
 	readonly channelId: string;
 	constructor(public parent: ScalableChatEngine, channelId: string) {
@@ -195,82 +166,5 @@ class Channel {
 				`${this.addNewMembers.name} error. \n ${errorMessages.join("\n")}`
 			);
 		}
-	}
-}
-
-abstract class GQLFunction {
-	static async cmChannelSendMessage(
-		channelMessageCreateInput: ChannelMessageCreateInput,
-		client: GraphQLClient
-	): Promise<ChannelMessageOutput> {
-		const mutation = gql`
-			mutation cmChannelSendMessage(
-				$channelMessageCreateInput: ChannelMessageCreateInput!
-			) {
-				cmChannelSendMessage(
-					channelMessageCreateInput: $channelMessageCreateInput
-				) {
-					isSuccess
-					code
-					errorMessage
-					data {
-						id
-						channelId
-						message
-						messageType
-						url
-					}
-				}
-			}
-		`;
-		const variables = {
-			channelMessageCreateInput,
-		};
-		const data = await client.request<
-			{
-				cmChannelSendMessage: ChannelMessageOutput;
-			},
-			{
-				channelMessageCreateInput: ChannelMessageCreateInput;
-			}
-		>(mutation, variables);
-		return data.cmChannelSendMessage;
-	}
-	static async cmChannelAddMembers(
-		cmChannelAddMembersInput: CMChannelAddMembersInput,
-		client: GraphQLClient
-	): Promise<ChannelMemberArrayOutput> {
-		const mutation = gql`
-			mutation cmChannelAddMembers(
-				$cmChannelAddMembersInput: CMChannelAddMembersInput!
-			) {
-				cmChannelAddMembers(
-					cmChannelAddMembersInput: $cmChannelAddMembersInput
-				) {
-					isSuccess
-					code
-					errorMessage
-					data {
-						id
-						channelId
-						message
-						messageType
-						url
-					}
-				}
-			}
-		`;
-		const variables = {
-			cmChannelAddMembersInput,
-		};
-		const data = await client.request<
-			{
-				cmChannelAddMembers: ChannelMemberArrayOutput;
-			},
-			{
-				cmChannelAddMembersInput: CMChannelAddMembersInput;
-			}
-		>(mutation, variables);
-		return data.cmChannelAddMembers;
 	}
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { StreamChat } from "stream-chat";
 import { ScalableChatEngine } from "./clientSDK";
 
 function App() {
