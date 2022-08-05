@@ -3,10 +3,14 @@ import { request, gql, GraphQLClient } from "graphql-request";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { isBoolean, IsDefinedNotNull, isString } from "./utils";
 import {
+	ChannelMemberArrayOutput,
+	ChannelMemberCreateInput,
 	ChannelMessageCreateInput,
 	ChannelMessageOutput,
 	ChannelMessageType,
+	CMChannelAddMembersInput,
 } from "./type";
+import { getGQLErrorMessages } from "./gqlErrorObject";
 export enum LogLevel {
 	PRODUCTION = 9,
 	LOG = 1,
@@ -147,17 +151,7 @@ export class ScalableChatEngine {
 	// }(this);
 }
 
-interface GQLErrorObject {
-	response: {
-		errors: {
-			extensions: {
-				code: string;
-			};
-			message: string;
-		}[];
-		status: number;
-	};
-}
+
 class Channel {
 	private gqlClient: GraphQLClient;
 	readonly channelId: string;
@@ -169,24 +163,45 @@ class Channel {
 	}
 	async sendTextMessage(message: string): Promise<ChannelMessageOutput> {
 		try {
-			const sendResult = await this.cmChannelSendMessage({
-				// message: null as any as string,
-				message,
-				messageType: ChannelMessageType.TEXT,
-			});
+			const sendResult = await GQLFunction.cmChannelSendMessage(
+				{
+					// message: null as any as string,
+					message,
+					messageType: ChannelMessageType.TEXT,
+				},
+				this.gqlClient
+			);
 			return sendResult;
 		} catch (error) {
-			const finalError = error as GQLErrorObject;
-			const errorMessages = finalError.response.errors.map(
-				(e) => e.message
-			);
+			const errorMessages = getGQLErrorMessages(error)
 			throw new Error(
-				`sendTextMessage error. \n ${errorMessages.join("\n")}`
+				`${this.sendTextMessage.name} error. \n ${errorMessages.join("\n")}`
 			);
 		}
 	}
-	private async cmChannelSendMessage(
-		channelMessageCreateInput: ChannelMessageCreateInput
+
+    async addNewMembers(channelMemberCreateInputs:ChannelMemberCreateInput[]): Promise<ChannelMemberArrayOutput> {
+		try {
+			const sendResult = await GQLFunction.cmChannelAddMembers(
+				{
+					channelMemberCreateInputs,
+				},
+				this.gqlClient
+			);
+			return sendResult;
+		} catch (error) {
+			const errorMessages = getGQLErrorMessages(error)
+			throw new Error(
+				`${this.addNewMembers.name} error. \n ${errorMessages.join("\n")}`
+			);
+		}
+	}
+}
+
+abstract class GQLFunction {
+	static async cmChannelSendMessage(
+		channelMessageCreateInput: ChannelMessageCreateInput,
+		client: GraphQLClient
 	): Promise<ChannelMessageOutput> {
 		const mutation = gql`
 			mutation cmChannelSendMessage(
@@ -211,7 +226,7 @@ class Channel {
 		const variables = {
 			channelMessageCreateInput,
 		};
-		const data = await this.gqlClient.request<
+		const data = await client.request<
 			{
 				cmChannelSendMessage: ChannelMessageOutput;
 			},
@@ -220,5 +235,42 @@ class Channel {
 			}
 		>(mutation, variables);
 		return data.cmChannelSendMessage;
+	}
+	static async cmChannelAddMembers(
+		cmChannelAddMembersInput: CMChannelAddMembersInput,
+		client: GraphQLClient
+	): Promise<ChannelMemberArrayOutput> {
+		const mutation = gql`
+			mutation cmChannelAddMembers(
+				$cmChannelAddMembersInput: CMChannelAddMembersInput!
+			) {
+				cmChannelAddMembers(
+					cmChannelAddMembersInput: $cmChannelAddMembersInput
+				) {
+					isSuccess
+					code
+					errorMessage
+					data {
+						id
+						channelId
+						message
+						messageType
+						url
+					}
+				}
+			}
+		`;
+		const variables = {
+			cmChannelAddMembersInput,
+		};
+		const data = await client.request<
+			{
+				cmChannelAddMembers: ChannelMemberArrayOutput;
+			},
+			{
+				cmChannelAddMembersInput: CMChannelAddMembersInput;
+			}
+		>(mutation, variables);
+		return data.cmChannelAddMembers;
 	}
 }
