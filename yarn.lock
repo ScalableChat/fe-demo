@@ -1555,6 +1555,16 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.1.4.tgz#0c8b74c50f29ee44f423f7416829c0bf8bb5eb27"
   integrity sha512-LwzQKA4vzIct1zNZzBmRKI9QuNpLgTQMEjsQLf3BXuGYb3QPTP4Yjf6mkdX+X1mYttZ808QpOwAzZjv28kq7DA==
 
+"@scalablechat/scalable-chat-engine@^2.2.0":
+  version "2.2.0"
+  resolved "https://npm.pkg.github.com/download/@scalablechat/scalable-chat-engine/2.2.0/bdde014245cf3c5ff2d8474653998b6a72cf565371ebba3b3b03dfc44c7f99b5#09d70f15587699181386d4dadd912ce5e13e3e05"
+  integrity sha512-MfNOBRUPkFK1xRQ+MwJr2JNx7EqnzomEleiW2UMxaMrGUvVDLrL9lFgZQOwD2I/NYmh3GnHfftATBo5wvfbrtA==
+  dependencies:
+    axios "^0.27.2"
+    graphql "^16.5.0"
+    graphql-request "^4.3.0"
+    socket.io-client "^4.5.1"
+
 "@sinclair/typebox@^0.24.1":
   version "0.24.20"
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.24.20.tgz#11a657875de6008622d53f56e063a6347c51a6dd"

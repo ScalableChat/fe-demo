@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogLevel, ScalableChatEngine } from "./clientSDK";
-
+import { ScalableChatEngine , LogLevel} from "@scalablechat/scalable-chat-engine"
 function App() {
 	const [chatEngine, setChatEngine] = useState<ScalableChatEngine | null>(null)
 	const [messageInput, setMessageInput] = useState<string>("")

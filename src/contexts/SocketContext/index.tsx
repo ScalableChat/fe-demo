@@ -5,9 +5,7 @@ import {
 	useEffect,
 	useState,
 } from "react"
-import { ScalableChatEngine } from "../../clientSDK"
-import { Channel, ChannelMessage } from "../../clientSDK/type"
-
+import { ScalableChatEngine , Channel, ChannelMessage} from "@scalablechat/scalable-chat-engine"
 export interface ScalableChatContextProps {
 	channels:Channel[]
 	channelMessages:ChannelMessage[]
