@@ -1,4 +1,4 @@
-import { Manager, Socket } from "socket.io-client";
+import { Manager, Socket, SocketOptions } from "socket.io-client";
 import { GraphQLClient } from "graphql-request";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { isBoolean, IsDefinedNotNull, isString } from "./utils";
@@ -7,6 +7,7 @@ import {
 	ChannelMemberCreateInput,
 	ChannelMessageOutput,
 	ChannelMessageType,
+	ChannelOutput,
 } from "./type";
 import { getGQLErrorMessages } from "./gqlErrorObject";
 import { GQLFunction } from "./gqlFunction";
@@ -38,6 +39,10 @@ export class ScalableChatEngine {
 	// baseURL?:string = "asd"
 	// wsURL?:string = "asd"
 	// gqlURL?:string = "asd"
+	
+	// hooks
+	onNewMessage?:(message:ChannelMessageOutput)=>Promise<void>
+	onNewChannel?:(channel:ChannelOutput)=>Promise<void>
 
 	private constructor(key: string, options?: ScalableChatEngineOptions);
 	private constructor(
@@ -68,18 +73,55 @@ export class ScalableChatEngine {
 			: typeof window !== undefined;
 		this.isNode = !this.isBrowser;
 		this.options = {
+			// apply default value and override if provided
+			logLevel:LogLevel.PRODUCTION,
+			baseURL:"http://localhost:7100",
+			gqlURL:"http://localhost:7100/graphql",
+			wsURL:'http://localhost:3100',
 			...inputOptions,
 		};
 
+		// Check options
+		if(!IsDefinedNotNull(this.options.baseURL)){
+			throw new Error("baseURL cannot be null")
+		}
+		if(!IsDefinedNotNull(this.options.wsURL)){
+			throw new Error("wsURL cannot be null")
+		}
+		if(!IsDefinedNotNull(this.options.gqlURL)){
+			throw new Error("gqlURL cannot be null")
+		}
+
+		// init Axios
 		const axiosConfig: AxiosRequestConfig = {
 			timeout: 3000,
 			withCredentials: false,
-			baseURL: inputOptions.baseURL,
+			baseURL: this.options.baseURL,
 		};
 		this.axiosInstance = axios.create(axiosConfig);
 
+		// Init GQL client
 		this.gqlClient = new GraphQLClient(this.options.gqlURL!);
 		this.gqlClient.setHeader("authorization", this.getAuthToken());
+
+		// Init socket Manager
+		const transports = ['websocket'];
+		this.socketManager = new Manager(this.options.wsURL, {
+			reconnectionDelayMax: 10000,
+			transports: transports,
+		});
+		this._applySocketManagerEventHandler(this.socketManager);
+		this.chatSocket = this._getNamespaceSocket({
+			namespace: '/chat',
+			socketOptions: {
+				auth: {
+					jwt: this.key,
+				},
+			},
+		});
+		this._applySocketEventHandler(this.chatSocket);
+		
+		this.options.logLevel! <= LogLevel.LOG && console.log(`${ScalableChatEngine.name} Initialized`)
 	}
 
 	public static getInstance(
@@ -112,6 +154,114 @@ export class ScalableChatEngine {
 			}
 		}
 		return ScalableChatEngine._instance as ScalableChatEngine;
+	}
+
+	private _checkSocketManager(){
+        
+        if(!this.socketManager){
+            throw new Error('SocketManager Not Initialized');
+        }
+    }
+
+    private _checkChatSocket(){
+        
+        if(!this.chatSocket){
+            throw new Error('Socket Not Initialized');
+        }
+    }
+
+	private _applySocketManagerEventHandler(socketManager: Manager) {
+        this._checkSocketManager()
+		socketManager.on('open', () => {
+			this.options.logLevel!! <= LogLevel.LOG && console.log('Manager connect');
+		});
+		socketManager.on('close', (reason) => {
+			this.options.logLevel! <= LogLevel.LOG &&
+				console.log('Manager close', reason);
+		});
+		socketManager.on('packet', (packet) => {
+			if(this.options.logLevel! <= LogLevel.DEBUG){
+				console.group('Manager packet')
+				console.dir(packet, { depth: null })
+				console.groupEnd()
+			}
+		});
+		socketManager.on('ping', () => {
+			this.options.logLevel! <= LogLevel.DEBUG && console.log('Manager ping');
+		});
+		socketManager.on('reconnect', (attempt) => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.log('Manager Reconnect success: ', attempt);
+		});
+		socketManager.on('reconnect_attempt', (attempt) => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.log('Manager Reconnect attempt: ', attempt);
+		});
+		socketManager.on('reconnect_error', (err) => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.error('Manager Reconnect err: ', err);
+		});
+		socketManager.on('reconnect_failed', () => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.error('Manager Reconnect failed');
+		});
+	}
+
+	private _getNamespaceSocket = (props: {
+		namespace: string;
+		socketOptions: Partial<SocketOptions>;
+	}) => {
+        this._checkSocketManager()
+		const { namespace = '/', socketOptions } = props;
+		try {
+			const socket = this.socketManager!.socket(namespace, socketOptions);
+			
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.log(`socket create namespace ${namespace} success`);
+			return socket;
+		} catch (error) {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.error(
+					`getSocket error, ns: ${namespace}, socketOptions: ${JSON.stringify(
+						socketOptions,
+					)}`,
+				);
+			throw new Error('Failed to get socket from socket manager');
+		}
+	};
+
+	private _applySocketEventHandler(socket: Socket) {
+		this._checkChatSocket()
+		socket.on('connect', () => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.log(`Socket connected`);
+		});
+
+		socket.on('disconnect', (reason) => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.log(`Socket disconnect due to ${reason}`);
+		});
+
+		socket.on('connect_error', (error) => {
+			this.options.logLevel! <= LogLevel.DEBUG &&
+				console.error('Socket Connect err: ', error);
+		});
+		
+		socket.onAny((event,data)=>{
+			this.socketEventHandler(event, data)
+		})
+	}
+
+	private socketEventHandler = (event:string, data:string) =>{
+
+		switch(event){
+
+			default:
+				console.group("Drop Socket Event")
+				console.log("event", event)
+				console.log("data", data)
+				console.groupEnd()
+		}
 	}
 
 	getAuthToken() {

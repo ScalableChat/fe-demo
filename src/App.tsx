@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScalableChatEngine } from "./clientSDK";
+import { LogLevel, ScalableChatEngine } from "./clientSDK";
 
 function App() {
 	const [chatEngine, setChatEngine] = useState<ScalableChatEngine | null>(null)
@@ -9,7 +9,9 @@ function App() {
 		const client = ScalableChatEngine.getInstance(
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGF0QXBwSWQiOiIyYTgzOTgzMC03YTM2LTQxMGYtOGY3Ny0xNWY2YjVkNzQ0MGMiLCJjaGF0TWVtYmVySWQiOiI1YjNkM2M1YS1lY2ViLTRmNmItODFhNi0yYzk4NjUwZGM1MmUiLCJpYXQiOjE2NTgyMDkxODB9.D9FHUVDvmmTdCSfwL6E3DgQz4j-COH9VlVgyKIvNMi4",
 			{
-				gqlURL:"http://localhost:7100/graphql"
+				wsURL:'http://localhost:3100',
+				gqlURL:"http://localhost:7100/graphql",
+				logLevel:LogLevel.DEBUG,
 			}
 		);
 		setChatEngine(client)
