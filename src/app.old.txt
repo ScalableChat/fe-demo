@@ -1,0 +1,80 @@
+import { useEffect, useState } from "react"
+import {
+	ScalableChatEngine,
+	LogLevel,
+} from "@scalablechat/scalable-chat-engine"
+function App() {
+	const [chatEngine, setChatEngine] = useState<ScalableChatEngine | null>(
+		null,
+	)
+	const [messageInput, setMessageInput] = useState<string>("")
+	const tokenA =
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGF0QXBwSWQiOiIyYTgzOTgzMC03YTM2LTQxMGYtOGY3Ny0xNWY2YjVkNzQ0MGMiLCJjaGF0TWVtYmVySWQiOiI1YjNkM2M1YS1lY2ViLTRmNmItODFhNi0yYzk4NjUwZGM1MmUiLCJpYXQiOjE2NTk5NjIwODF9.HHXXAJO5iperRxk1tS2Wct9ML7GDT2aA0h5yEd7eDO4"
+	const tokenB =
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGF0QXBwSWQiOiIyYTgzOTgzMC03YTM2LTQxMGYtOGY3Ny0xNWY2YjVkNzQ0MGMiLCJjaGF0TWVtYmVySWQiOiIxNGJlZWEyMC00MTMwLTRkZWItODlhYi02YWQ2ZDIyNjcyZjEiLCJpYXQiOjE2NTk5NjIxMjJ9.WOP-8R-WqLUV_KcpUWggnbaHZMGZ8ppzfvf-Vk-f-FI"
+	const [jwtToken, setJwtToken] = useState<string>(tokenA)
+	const initScalableChatEngine = async () => {
+		const client = ScalableChatEngine.getInstance(jwtToken, {
+			wsURL: "http://localhost:3100",
+			gqlURL: "http://localhost:7100/graphql",
+			logLevel: LogLevel.DEBUG,
+		})
+		setChatEngine(client)
+		client.onNewMessage = (message)=>{
+			console.log("message", message)
+		}
+	}
+	const sendMessage = async (message: string) => {
+		const channel = chatEngine!.getChannel(
+			"33e6f3ac-a115-465d-9a49-1e0df5a1990b",
+		)
+		const result = await channel.sendTextMessage(message)
+		console.log("result", result)
+	}
+	if (chatEngine === null) {
+		return (
+			<div>
+				<button
+					disabled={jwtToken === tokenA}
+					onClick={() => {
+						setJwtToken(tokenA)
+					}}
+				>
+					Set Token A
+				</button>
+				<button
+					disabled={jwtToken === tokenB}
+					onClick={() => {
+						setJwtToken(tokenB)
+					}}
+				>
+					Set Token B
+				</button>
+				{/* <br/> */}
+				{/* <span>{jwtToken}</span> */}
+				<br/>
+				<input
+					value={jwtToken}
+					onChange={(e) => setJwtToken(e.currentTarget.value)}
+				/>
+				<br />
+				<button onClick={() => initScalableChatEngine()}>
+					Init Chat Engine
+				</button>
+			</div>
+		)
+	}
+	return (
+		<div>
+			<input
+				value={messageInput}
+				onChange={(e) => setMessageInput(e.currentTarget.value)}
+			/>
+			<button onClick={() => sendMessage(messageInput)}>
+				Send Message
+			</button>
+		</div>
+	)
+}
+
+export default App

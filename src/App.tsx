@@ -1,10 +1,24 @@
-import { useEffect, useState } from "react"
+import { Fragment, useEffect, useState } from "react"
 import {
 	ScalableChatEngine,
 	LogLevel,
+	CMMyChannel,
+	ChannelMessage,
 } from "@scalablechat/scalable-chat-engine"
+import {
+	useScalableChatContext,
+	WithScalableChatContext,
+} from "./contexts/SocketContext"
 function App() {
-	const [chatEngine, setChatEngine] = useState<ScalableChatEngine | null>(
+	const {
+		chatEngine,
+		setChatEngine,
+		isSyncing,
+		channelMessagesMap,
+		myChannels,
+		onSendTextMessage,
+	} = useScalableChatContext()
+	const [currentChannel, setCurrentChannel] = useState<CMMyChannel | null>(
 		null,
 	)
 	const [messageInput, setMessageInput] = useState<string>("")
@@ -21,12 +35,19 @@ function App() {
 		})
 		setChatEngine(client)
 	}
-	const sendMessage = async (message: string) => {
-		const channel = chatEngine!.getChannel(
-			"33e6f3ac-a115-465d-9a49-1e0df5a1990b",
+	const messageDisplayer = (
+		currentChannel: CMMyChannel,
+		channelMessagesMap: Map<string, ChannelMessage[]>,
+	) => {
+		const channelMessages =
+			channelMessagesMap.get(currentChannel.channel.id) ?? []
+		return (
+			<div>
+				{channelMessages.map((channelMessage, i) => {
+					return <div key={i}>{channelMessage.message}</div>
+				})}
+			</div>
 		)
-		const result = await channel.sendTextMessage("Hello World123")
-		console.log("result", result)
 	}
 	if (chatEngine === null) {
 		return (
@@ -49,7 +70,7 @@ function App() {
 				</button>
 				{/* <br/> */}
 				{/* <span>{jwtToken}</span> */}
-				<br/>
+				<br />
 				<input
 					value={jwtToken}
 					onChange={(e) => setJwtToken(e.currentTarget.value)}
@@ -61,17 +82,58 @@ function App() {
 			</div>
 		)
 	}
+	if (isSyncing) {
+		return <div>Syncing</div>
+	}
 	return (
 		<div>
-			<input
-				value={messageInput}
-				onChange={(e) => setMessageInput(e.currentTarget.value)}
-			/>
-			<button onClick={() => sendMessage(messageInput)}>
-				Send Message
-			</button>
+			<span>Channels</span>
+			{myChannels.map((myChannel, i) => {
+				const isSelect =
+					currentChannel !== null &&
+					currentChannel?.channel.id === myChannel.channel.id
+				return (
+					<div key={i}>
+						<span>
+							{myChannel.channel.isDirect
+								? "DM"
+								: myChannel.channel.name}
+						</span>
+						<button
+							disabled={isSelect}
+							onClick={() => setCurrentChannel(myChannel)}
+						>
+							{isSelect ? "Selected" : "Select"}
+						</button>
+					</div>
+				)
+			})}
+			<br />
+			{currentChannel === null ? (
+				<span>No selected channel</span>
+			) : (
+				<Fragment>
+					<input
+						value={messageInput}
+						onChange={(e) => setMessageInput(e.currentTarget.value)}
+					/>
+					<button
+						onClick={() =>
+							onSendTextMessage(
+								currentChannel.channel.id,
+								messageInput,
+							)
+						}
+					>
+						Send Message
+					</button>
+					<br />
+					{messageDisplayer(currentChannel, channelMessagesMap)}
+					
+				</Fragment>
+			)}
 		</div>
 	)
 }
 
-export default App
+export default WithScalableChatContext(App)
