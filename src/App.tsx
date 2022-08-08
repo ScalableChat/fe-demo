@@ -39,12 +39,37 @@ function App() {
 		currentChannel: CMMyChannel,
 		channelMessagesMap: Map<string, ChannelMessage[]>,
 	) => {
+		const myChatMember = currentChannel.channel.channelMembers.find(e=>e.id === currentChannel.channelMember.id)?.chatMember
 		const channelMessages =
 			channelMessagesMap.get(currentChannel.channel.id) ?? []
 		return (
 			<div>
 				{channelMessages.map((channelMessage, i) => {
-					return <div key={i}>{channelMessage.message}</div>
+					const isMyMessage =
+						channelMessage.channelMemberId ===
+						currentChannel.channelMember.id
+					const senderChannelMember =
+						currentChannel.channel.channelMembers.find(
+							(e) => e.id === channelMessage.channelMemberId,
+						)
+
+					return (
+						<div
+							key={i}
+							style={{
+								backgroundColor: isMyMessage
+									? "green"
+									: undefined,
+							}}
+						>
+							<span>{`${
+								isMyMessage
+									? myChatMember?.name ?? "ME"
+									: senderChannelMember?.chatMember.name
+							}: `}</span>
+							<span>{channelMessage.message}</span>
+						</div>
+					)
 				})}
 			</div>
 		)
@@ -129,7 +154,6 @@ function App() {
 					</button>
 					<br />
 					{messageDisplayer(currentChannel, channelMessagesMap)}
-					
 				</Fragment>
 			)}
 		</div>
