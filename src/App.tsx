@@ -29,8 +29,8 @@ function App() {
 	const [jwtToken, setJwtToken] = useState<string>(tokenA)
 	const initScalableChatEngine = async () => {
 		const client = ScalableChatEngine.getInstance(jwtToken, {
-			wsURL: "http://localhost:3100",
-			gqlURL: "http://localhost:7100/graphql",
+			wsURL: "https://office-chat-ws.innoplus.xyz",
+			gqlURL: "https://office-chat-be.innoplus.xyz/graphql",
 			logLevel: LogLevel.DEBUG,
 		})
 		setChatEngine(client)
