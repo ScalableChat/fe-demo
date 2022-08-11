@@ -9,6 +9,7 @@ import {
 	useScalableChatContext,
 	WithScalableChatContext,
 } from "./contexts/SocketContext"
+import ChannelListCard from "./components/ChannelListCard"
 function App() {
 	const {
 		chatEngine,
@@ -39,7 +40,9 @@ function App() {
 		currentChannel: CMMyChannel,
 		channelMessagesMap: Map<string, ChannelMessage[]>,
 	) => {
-		const myChatMember = currentChannel.channel.channelMembers.find(e=>e.id === currentChannel.channelMember.id)?.chatMember
+		const myChatMember = currentChannel.channel.channelMembers.find(
+			(e) => e.id === currentChannel.channelMember.id,
+		)?.chatMember
 		const channelMessages =
 			channelMessagesMap.get(currentChannel.channel.id) ?? []
 		return (
@@ -65,7 +68,7 @@ function App() {
 							<span>{`${
 								isMyMessage
 									? myChatMember?.name ?? "ME"
-									: senderChannelMember?.chatMember.name
+									: senderChannelMember?.chatMember!.name
 							}: `}</span>
 							<span>{channelMessage.message}</span>
 						</div>
@@ -118,19 +121,12 @@ function App() {
 					currentChannel !== null &&
 					currentChannel?.channel.id === myChannel.channel.id
 				return (
-					<div key={i}>
-						<span>
-							{myChannel.channel.isDirect
-								? "DM"
-								: myChannel.channel.name}
-						</span>
-						<button
-							disabled={isSelect}
-							onClick={() => setCurrentChannel(myChannel)}
-						>
-							{isSelect ? "Selected" : "Select"}
-						</button>
-					</div>
+					<ChannelListCard
+						key={i}
+						myChannel={myChannel}
+						isSelected={isSelect}
+						onClick={()=>{setCurrentChannel(myChannel)}}
+					/>
 				)
 			})}
 			<br />
