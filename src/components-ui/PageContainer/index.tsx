@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { PageContainerProps } from './types'
 
 function PageContainer(props:PageContainerProps) {
+
   return (
     <div
         style={{
@@ -18,7 +19,17 @@ function PageContainer(props:PageContainerProps) {
         }}
     >
         {props.header}
-        {Array.isArray(props.content) ? props.content.map(e=>e) : props.content}
+
+        {
+          React.Children.toArray(props.content).map((Content,i)=>{
+            return <Fragment key={i}>
+              {Content}
+            </Fragment>
+          })
+        }
+        {/* {Array.isArray(props.content) ? props.content.map((Content,i)=>{
+          return <Content key={i}/>
+        }) : props.content} */}
     </div>
   )
 }

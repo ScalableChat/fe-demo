@@ -78,7 +78,7 @@ export const WithScalableChatContext = (
 			channelMessages: ChannelMessage[],
 		) => {
 			setChannelMessagesMap(
-				new Map(channelMessagesMap.set(channelId, channelMessages)),
+				new Map(channelMessagesMap.set(channelId, [...channelMessages])),
 			)
 		}
 		const handleNewMessage = (message: ChannelMessage) => {

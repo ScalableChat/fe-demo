@@ -1,9 +1,30 @@
+import { useEffect, useRef } from "react"
 import ChannelMessageListCard from "../../components-ui/ChannelMessageListCard"
 import { MyChannelMessageListProps } from "./types"
 
 function MyChannelMessageList(props: MyChannelMessageListProps) {
 	const { currentMyChannel, channelMessages } = props
-
+	const bottomDivRef = useRef<HTMLDivElement>(null)
+	const scrollToBottom = () =>{
+		bottomDivRef.current?.scrollIntoView({ 
+			block:"start",
+			inline: "center",
+			behavior: "smooth",
+			
+		})
+	}
+	useEffect(() => {
+		// console.log("channelMessages change")
+		// console.log("currentMyChannel change")
+		if(channelMessages.length > 0 && currentMyChannel){
+			// console.log("last message", channelMessages.at(-1))
+			// console.log("currentMyChannel",currentMyChannel)
+			if(channelMessages.at(-1)?.channelMemberId === currentMyChannel.channelMember.id){
+				// console.log("pass")
+				scrollToBottom()
+			}
+		}
+	}, [channelMessages, currentMyChannel])
 	return (
 		<div
 			style={{
@@ -38,6 +59,7 @@ function MyChannelMessageList(props: MyChannelMessageListProps) {
 					/>
 				)
 			})}
+			<div ref={bottomDivRef}/>
 		</div>
 	)
 }

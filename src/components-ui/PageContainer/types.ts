@@ -1,7 +1,7 @@
-import { CSSProperties, ReactElement } from "react";
+import {  CSSProperties, ReactNode } from "react";
 
 export interface PageContainerProps{
     style?:CSSProperties
-    header?:ReactElement
-    content?:ReactElement | ReactElement[]
+    header?: ReactNode
+    content?:ReactNode | ReactNode[]
 }
