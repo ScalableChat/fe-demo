@@ -9,6 +9,9 @@ function MyChannelList() {
 			style={{
 				height:"100%",
 				overflowY:"scroll",
+				// display:"flex",
+				// flexDirection:"column",
+				// rowGap:"12px"
 			}}
 		>
 			{myChannels.map((myChannel, i) => {

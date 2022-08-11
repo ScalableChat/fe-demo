@@ -7,7 +7,7 @@ function MyChannelListCard(props: ChannelListCardProps) {
 	const { channelName, channelPhotoURL } = getMyChannelInfo(myChannel)
 	return (
 		<div
-			onDoubleClick={() => {
+			onClick={() => {
 				onClick && onClick(myChannel)
 			}}
 			// onClick={}
@@ -15,7 +15,11 @@ function MyChannelListCard(props: ChannelListCardProps) {
 				display: "flex",
 				flexDirection: "row",
 				alignItems: "center",
+				columnGap:"6px",
 				backgroundColor: isSelected ? "lightgrey" : undefined,
+				cursor:"pointer",
+				boxSizing:"border-box",
+				padding:"6px"
 			}}
 		>
 			{/* Left Avatar */}
@@ -29,6 +33,7 @@ function MyChannelListCard(props: ChannelListCardProps) {
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "flex-start",
+					rowGap:"6px",
 				}}
 			>
 				{/* Right upper */}
