@@ -3,24 +3,46 @@ import {
 	ScalableChatEngine,
 	ChannelMessage,
 	CMMyChannel,
+	ChatMember,
+	ChannelMessageCreateInput,
+	ChannelMessageType,
+	ChannelMessageOutput,
 } from "@scalablechat/scalable-chat-engine"
+import { groupBy } from "../../utils/groupBy"
+export type ChannelMessageMap = Map<string, ChannelMessage[]>
+export type ChannelMessageCreateInputMap = Map<string, ChannelMessageCreateInput>
+export const defaultChannelMessageCreateInput:ChannelMessageCreateInput = {messageType:ChannelMessageType.TEXT, message:""}
 export interface ScalableChatContextProps {
 	chatEngine: ScalableChatEngine | null
 	setChatEngine: (chatEngine: ScalableChatEngine) => void
+	currentChatMember:ChatMember | null
+	setCurrentChatMember:(currentChatMember:ChatMember)=>void
 	myChannels: CMMyChannel[]
-	channelMessagesMap: Map<string, ChannelMessage[]>
+	currentMyChannel: CMMyChannel | null
+	setCurretMyChannel: (myChannel: CMMyChannel) => void
+	channelMessagesMap:ChannelMessageMap
+	channelMessageCreateInputMap: ChannelMessageCreateInputMap
+	setChannelMessageCreateInput: (channelId:string, channelMessageCreateInput:ChannelMessageCreateInput) =>void
 	sync: () => Promise<void>
 	isSyncing: boolean
-	onSendTextMessage: (channelId: string, message: string) => Promise<void>
+	onChannelSendMessage:(channelId:string)=>Promise<void>
+	// onSendTextMessage: (channelId: string, message: string) => Promise<void>
 }
 const ScalableChatContext = createContext<ScalableChatContextProps>({
 	chatEngine: null,
 	setChatEngine: () => {},
+	currentChatMember:null,
+	setCurrentChatMember:()=>{},
 	myChannels: [],
+	currentMyChannel: null,
+	setCurretMyChannel: () => {},
 	channelMessagesMap: new Map(),
+	channelMessageCreateInputMap: new Map(),
+	setChannelMessageCreateInput:()=>{},
 	sync: async () => {},
 	isSyncing: false,
-	onSendTextMessage: async () => {},
+	// onSendTextMessage: async () => {},
+	onChannelSendMessage: async () => {},
 })
 
 export interface ScalableChatContextOptions {
@@ -35,28 +57,21 @@ export const WithScalableChatContext = (
 	options: ScalableChatContextOptions = defaultScalableChatContextOptions,
 ) => {
 	return function WithScalableChatContext(props: any) {
+		const [currentChatMember, setCurrentChatMember] = useState<ChatMember | null>(null)
 		const [myChannels, setMyChannels] = useState<CMMyChannel[]>([])
+		const [currentMyChannel, setCurrentMyChannel] =
+			useState<CMMyChannel | null>(null)
 		const [channelMessagesMap, setChannelMessagesMap] = useState<
-			Map<string, ChannelMessage[]>
+		ChannelMessageMap
 		>(new Map<string, ChannelMessage[]>())
+
+		const [channelMessageCreateInputMap, setChannelMessageCreateInputMap] = useState<
+		ChannelMessageCreateInputMap
+		>(new Map<string, ChannelMessageCreateInput>())
+
 		const [engine, setEngine] = useState<ScalableChatEngine | null>(null)
 		const [isSyncing, setIsSyncing] = useState(false)
-		function groupBy<T>(
-			list: T[],
-			keyGetter: (data: T) => string | number,
-		) {
-			const map = new Map<string | number, T[]>()
-			list.forEach((item) => {
-				const key = keyGetter(item)
-				const collection = map.get(key)
-				if (!collection) {
-					map.set(key, [item])
-				} else {
-					collection.push(item)
-				}
-			})
-			return map
-		}
+
 
 		const upsertChannelMessageMap = (
 			channelId: string,
@@ -72,19 +87,48 @@ export const WithScalableChatContext = (
 			channelMessages.push(message)
 			upsertChannelMessageMap(message.channelId, channelMessages)
 		}
-		const handleChannelSendTextMessage = async (
-			channelId: string,
-			message: string,
-		) => {
+		const upsertChannelMessageCreateInputMap = (channelId:string, input:ChannelMessageCreateInput) =>{
+			setChannelMessageCreateInputMap(
+				new Map(channelMessageCreateInputMap.set(channelId, input)),
+			)
+		}
+		const handleChannelSendMessage = async (channelId:string) =>{
+			let result:ChannelMessageOutput = {isSuccess:false, code:500}
 			const channel = engine?.getChannel(channelId)
-			const result = await channel!.sendTextMessage(message)
-			console.log("result", result)
+			const messageCreateInput = channelMessageCreateInputMap.get(channelId) ?? {...defaultChannelMessageCreateInput}
+			switch(messageCreateInput.messageType){
+				case ChannelMessageType.TEXT:
+					result = await channel!.sendTextMessage(messageCreateInput.message)
+					// await handleChannelSendTextMessage(channelId, messageCreateInput.message)
+				break
+				
+				default:
+					console.error(`No message type ${messageCreateInput.messageType} send handler, data: ${JSON.stringify(messageCreateInput)}`)
+			}
+
+			// update local channel message
 			let channelMessages = channelMessagesMap.get(channelId) ?? []
 			if (result.isSuccess && result.data) {
 				channelMessages.push(result.data)
 			}
 			upsertChannelMessageMap(channelId, channelMessages)
+		
+			// clear input
+			upsertChannelMessageCreateInputMap(channelId, {...defaultChannelMessageCreateInput})
 		}
+		// const handleChannelSendTextMessage = async (
+		// 	channelId: string,
+		// 	message: string,
+		// ) => {
+		// 	const channel = engine?.getChannel(channelId)
+		// 	const result = await channel!.sendTextMessage(message)
+		// 	console.log("result", result)
+		// 	let channelMessages = channelMessagesMap.get(channelId) ?? []
+		// 	if (result.isSuccess && result.data) {
+		// 		channelMessages.push(result.data)
+		// 	}
+		// 	upsertChannelMessageMap(channelId, channelMessages)
+		// }
 		const handleSetClient = async (client: ScalableChatEngine) => {
 			// bind handler function
 			client.onNewMessage = handleNewMessage
@@ -98,9 +142,12 @@ export const WithScalableChatContext = (
 		const syncChannelAndMessages = async (_engine: ScalableChatEngine) => {
 			setIsSyncing(true)
 			try {
+				// update currentChatMember
+				const currentChatMemberResult =await _engine.getMyChatMember()
+				setCurrentChatMember(currentChatMemberResult.data ?? null)
+
 				// update channels
 				const channelsResult = await _engine?.getMyChannels()
-				console.log("channelsResult", channelsResult)
 				setMyChannels(channelsResult?.data ?? [])
 
 				const lastUpdateDate = new Date("2022-01-01")
@@ -141,17 +188,24 @@ export const WithScalableChatContext = (
 			if (engine === null) {
 				throw new Error("Engine not initialized")
 			}
-			syncChannelAndMessages(engine)
+			await syncChannelAndMessages(engine)
 		}
 		try {
 			const defaultContextValue: ScalableChatContextProps = {
 				chatEngine: engine,
 				setChatEngine: handleSetClient,
+				currentChatMember,
+				setCurrentChatMember,
 				myChannels: myChannels,
+				currentMyChannel:currentMyChannel,
+				setCurretMyChannel:setCurrentMyChannel,
 				channelMessagesMap: channelMessagesMap,
+				channelMessageCreateInputMap,
+				setChannelMessageCreateInput:upsertChannelMessageCreateInputMap,
 				sync: handleSync,
 				isSyncing: isSyncing,
-				onSendTextMessage: handleChannelSendTextMessage,
+				// onSendTextMessage: handleChannelSendTextMessage,
+				onChannelSendMessage:handleChannelSendMessage
 			}
 
 			return (
