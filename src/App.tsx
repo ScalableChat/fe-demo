@@ -2,8 +2,6 @@ import { useState } from "react"
 import {
 	ScalableChatEngine,
 	LogLevel,
-	CMMyChannel,
-	ChannelMessage,
 } from "@scalablechat/scalable-chat-engine"
 import {
 	useScalableChatContext,
@@ -11,6 +9,7 @@ import {
 } from "./contexts/SocketContext"
 import MyChannelList from "./components/MyChannelList"
 import ChannelMessageScreen from "./components/ChannelMessageScreen"
+import SideBar from "./components/SideBar"
 function App() {
 	const {
 		chatEngine,
@@ -87,7 +86,7 @@ function App() {
 			}}
 		>
 			{/* Channel List */}
-			<MyChannelList />
+			<SideBar />
 			<ChannelMessageScreen />
 		</div>
 	)

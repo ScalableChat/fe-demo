@@ -7,11 +7,11 @@ function MyChannelList() {
 	return (
 		<div
 			style={{
+				minWidth:"250px",
+				width:"100%",
 				height:"100%",
 				overflowY:"scroll",
-				// display:"flex",
-				// flexDirection:"column",
-				// rowGap:"12px"
+				flex:1,
 			}}
 		>
 			{myChannels.map((myChannel, i) => {

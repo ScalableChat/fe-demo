@@ -19,11 +19,10 @@ function MyChannelMessageList(props: MyChannelMessageListProps) {
 		if(channelMessages.length > 0 && currentMyChannel){
 			// console.log("last message", channelMessages.at(-1))
 			// console.log("currentMyChannel",currentMyChannel)
-			// if(channelMessages.at(-1)?.channelMemberId === currentMyChannel.channelMember.id){
-			// 	// console.log("pass")
-			// 	scrollToBottom()
-			// }
-			scrollToBottom()
+			if(channelMessages.at(-1)?.channelMemberId === currentMyChannel.channelMember.id){
+				// console.log("pass")
+				scrollToBottom()
+			}
 		}
 	}, [channelMessages, currentMyChannel])
 	return (
@@ -46,7 +45,7 @@ function MyChannelMessageList(props: MyChannelMessageListProps) {
 						(e) => e.id === channelMessage.channelMemberId,
 					)
 				if (!senderChannelMember) {
-					return //skip
+					return null//skip
 				}
 				return (
 					<ChannelMessageListCard
