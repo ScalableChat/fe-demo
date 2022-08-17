@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import {
 	ScalableChatEngine,
 	LogLevel,
@@ -73,7 +73,9 @@ function App() {
 		return <div>Sync Chat Member Failed. Please try again.</div>
 	}
 	return (
-		<div
+		<Fragment>
+			<div>{`ChatMemberId: ${currentChatMember.id} name: ${currentChatMember.name}`}</div>
+					<div
 			style={{
 				display:"flex",
 				flexDirection:"row",
@@ -89,6 +91,7 @@ function App() {
 			<SideBar />
 			<ChannelMessageScreen />
 		</div>
+		</Fragment>
 	)
 }
 
