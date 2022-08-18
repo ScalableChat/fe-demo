@@ -1555,10 +1555,10 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.1.4.tgz#0c8b74c50f29ee44f423f7416829c0bf8bb5eb27"
   integrity sha512-LwzQKA4vzIct1zNZzBmRKI9QuNpLgTQMEjsQLf3BXuGYb3QPTP4Yjf6mkdX+X1mYttZ808QpOwAzZjv28kq7DA==
 
-"@scalablechat/scalable-chat-engine@^2.5.0":
-  version "2.5.0"
-  resolved "https://npm.pkg.github.com/download/@scalablechat/scalable-chat-engine/2.5.0/81be9d509b81b308544b6f8adaa2b312698a300f05b5a6de4c21d17bd3b1f9e6#04a3ac7145dd7866fd52e87b8f3f3e038e03ce1a"
-  integrity sha512-P84VWtRca2t1hWSea0FJCfl0IdW4x+kBaxSYWu7ESgEhKdtLK1UkuQD7e9+65kZ0OpY3Pb/QCBOOSv/WmDyo+w==
+"@scalablechat/scalable-chat-engine@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@scalablechat/scalable-chat-engine/-/scalable-chat-engine-3.0.1.tgz#c023ecf62b6c80088b9e94c90fc7f464efb10fe7"
+  integrity sha512-NBzC+cndiicPgDAbSjL04/tIivemCzKp6cCBYNv0M+/uUiwiuS2/PFhKhvllWfhYZJRyt8mUkOwuJnpt6NJxWA==
   dependencies:
     axios "^0.27.2"
     graphql "^16.5.0"
